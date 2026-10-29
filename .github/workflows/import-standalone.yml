@@ -1,7 +1,5 @@
 name: Import tested standalone project source
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 permissions:
   contents: write
