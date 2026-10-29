@@ -1,0 +1,35 @@
+name: Independent Project CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Run project unit and API tests
+        run: python -m pytest -q
+      - name: Run fictional sample end to end
+        run: python cli.py
+      - name: Python syntax check
+        run: python -m compileall -q app
+      - name: Check architecture, graph and project tree files
+        run: |
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          essentials = ['PROJECT.json','README.md','app/main.py','frontend/index.html','tests/test_demo.py','docs/ARCHITECTURE.md','docs/MODEL_CARD.md','docs/THREAT_MODEL.md','docs/workflow.mmd','docs/PROJECT_STRUCTURE.md']
+          assert all(Path(x).is_file() and Path(x).stat().st_size for x in essentials)
+          for x in ['cover.svg','architecture.svg','synthetic-trend.svg']:
+              assert ET.parse('assets/'+x).getroot().tag.endswith('}svg')
+          print('Complete independent project package and graphics verified.')
+          PY
