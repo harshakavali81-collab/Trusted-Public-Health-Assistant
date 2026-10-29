@@ -1,0 +1,35 @@
+name: Python API and project evidence CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  unit-and-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Run automated demo/API tests
+        run: python -m pytest -q
+      - name: Run reproducible synthetic sample
+        run: python cli.py
+      - name: Compile Python source
+        run: python -m compileall -q app
+      - name: Validate diagrams and required files
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          required=['PROJECT.json','README.md','app/main.py','frontend/index.html','tests/test_demo.py','docs/ARCHITECTURE.md','docs/MODEL_CARD.md','docs/THREAT_MODEL.md','docs/workflow.mmd','docs/PROJECT_STRUCTURE.md']
+          assert all(Path(p).is_file() and Path(p).stat().st_size>0 for p in required)
+          for p in ['cover.svg','architecture.svg','synthetic-trend.svg']:
+              assert ET.parse(Path('assets')/p).getroot().tag.endswith('}svg')
+          print('Source, test fixture, docs and 3 original SVGs verified.')
+          PY
